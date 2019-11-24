@@ -97,6 +97,12 @@ With this setup, `:Async cargo test` can be used to trigger a one-off action, an
 
 I also configure a few mappings to quickly open/close/toggle the quickfix window and the Vim terminal. You can check those out [here](https://github.com/JoshMcguigan/dotvim/blob/master/vimrc).
 
+### Developer notes
+
+To publish a new release, update the version in `Cargo.toml`, then create a new release on GitHub. CI will build and publish new binaries. Then update the install instructions on the readme.
+
+To test a local build of the software, run `cargo build`, then manually copy the binary to `$VIM_HOME/plugged/estream/bin/estream`.
+
 ### Contribution
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
