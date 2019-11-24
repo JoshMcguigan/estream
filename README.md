@@ -2,6 +2,8 @@
 
 If you are a Vim user, estream can improve your workflow and simplify your Vim configuration.
 
+[![asciicast](https://asciinema.org/a/7NeGl1PsWquI1Wik9iaxgOSeg.svg)](https://asciinema.org/a/7NeGl1PsWquI1Wik9iaxgOSeg)
+
 ### Installation
 
 ```
