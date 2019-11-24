@@ -1,11 +1,19 @@
 use regex::Regex;
-use std::{io, io::BufRead};
+use std::{env, io, io::BufRead};
+
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 static FILE_COLON_LINE_COLON_COLUMN: &str =
     r"(?P<file>\S+):(?P<line>[[:digit:]]+):(?P<column>[[:digit:]]+)";
 static FILE_COLON_LINE: &str = r"(?P<file>\S+):(?P<line>[[:digit:]]+)";
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+    if let Some("--version") = args.get(1).map(|s| s.as_str()) {
+        println!("v{}", VERSION);
+        return;
+    }
+
     let stdin = io::stdin();
 
     let file_colon_line_colon_column = Regex::new(FILE_COLON_LINE_COLON_COLUMN).unwrap();
