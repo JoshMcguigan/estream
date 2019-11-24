@@ -3,8 +3,7 @@ use std::{io, io::BufRead};
 
 static FILE_COLON_LINE_COLON_COLUMN: &str =
     r"(?P<file>\S+):(?P<line>[[:digit:]]+):(?P<column>[[:digit:]]+)";
-static FILE_COLON_LINE: &str =
-    r"(?P<file>\S+):(?P<line>[[:digit:]]+)";
+static FILE_COLON_LINE: &str = r"(?P<file>\S+):(?P<line>[[:digit:]]+)";
 
 fn main() {
     let stdin = io::stdin();
@@ -30,14 +29,22 @@ fn main() {
             let line = &captures["line"].parse().unwrap();
             let column = &captures["column"].parse().unwrap();
 
-            let e = ErrorLocation { file, line: Some(*line), column: Some(*column) };
+            let e = ErrorLocation {
+                file,
+                line: Some(*line),
+                column: Some(*column),
+            };
             handle_error_line(e);
         } else if let Some(captures) = file_colon_line.captures(&line) {
             let file = &captures["file"];
             // See note above on why we unwrap here only to wrap in Some below.
             let line = &captures["line"].parse().unwrap();
 
-            let e = ErrorLocation { file, line: Some(*line), column: None };
+            let e = ErrorLocation {
+                file,
+                line: Some(*line),
+                column: None,
+            };
             handle_error_line(e);
         }
     }
@@ -52,12 +59,19 @@ fn handle_error_line(e: ErrorLocation) {
     }
 
     match e {
-        ErrorLocation { file, line: Some(line), column: Some(column) } =>
-            println!("{}|{}|{}", file, line, column),
-        ErrorLocation { file, line: Some(line), column: None } =>
-            println!("{}|{}|", file, line),
-        ErrorLocation { file, line: None, .. } =>
-            println!("{}||", file),
+        ErrorLocation {
+            file,
+            line: Some(line),
+            column: Some(column),
+        } => println!("{}|{}|{}", file, line, column),
+        ErrorLocation {
+            file,
+            line: Some(line),
+            column: None,
+        } => println!("{}|{}|", file, line),
+        ErrorLocation {
+            file, line: None, ..
+        } => println!("{}||", file),
     }
 }
 
@@ -69,11 +83,12 @@ struct ErrorLocation<'a> {
 
 #[cfg(test)]
 mod file_colon_line_colon_column {
-    use regex::{Captures, Regex};
     use super::FILE_COLON_LINE_COLON_COLUMN;
+    use regex::{Captures, Regex};
 
     fn re(input: &str) -> Option<Captures> {
-        Regex::new(FILE_COLON_LINE_COLON_COLUMN).unwrap()
+        Regex::new(FILE_COLON_LINE_COLON_COLUMN)
+            .unwrap()
             .captures(input)
     }
 
@@ -156,12 +171,11 @@ mod file_colon_line_colon_column {
 
 #[cfg(test)]
 mod file_colon_line {
-    use regex::{Captures, Regex};
     use super::FILE_COLON_LINE;
+    use regex::{Captures, Regex};
 
     fn re(input: &str) -> Option<Captures> {
-        Regex::new(FILE_COLON_LINE).unwrap()
-            .captures(input)
+        Regex::new(FILE_COLON_LINE).unwrap().captures(input)
     }
 
     #[test]
