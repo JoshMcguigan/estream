@@ -31,7 +31,7 @@ First install estream as described above. Then install [asyncrun.vim](https://gi
 
 ```vim
 :set errorformat=%f\|%l\|%c,%f\|%l\|,%f\|\| " This describes estream's output format to Vim
-:AsyncRun cargo test |& estream " Replace cargo test with whichever command you use to run tests
+:AsyncRun cargo test |& $VIM_HOME/plugged/estream/bin/estream " Replace cargo test with whichever command you use to run tests
 :vert botright copen " Open the quickfix window
 ```
 
