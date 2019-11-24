@@ -6,8 +6,13 @@ If you are a Vim user, estream can help you unlock the power of the quickfix win
 
 ### Installation
 
-```
-cargo install --force --git https://github.com/JoshMcguigan/estream
+Using vim-plug:
+
+```vim
+Plug 'JoshMcguigan/estream', { 'do': 'bash install.sh v0.1.1' }
+
+" estream doesn't directly depend on asyncrun, but they work well together
+Plug 'skywind3000/asyncrun.vim'
 ```
 
 ### What does it do?
@@ -73,7 +78,7 @@ let g:asyncrun_local = 0
 " Pipe any async command through estream to format it as expected
 " by the errorformat setting above
 " example: `:Async cargo test`
-command -nargs=1 Async execute "AsyncRun <args> |& estream"
+command -nargs=1 Async execute "AsyncRun <args> |& $VIM_HOME/plugged/estream/bin/estream"
 nnoremap <leader>a :Async 
 nnoremap <leader>s :AsyncStop<CR>
 
