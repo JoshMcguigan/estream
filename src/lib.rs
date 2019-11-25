@@ -149,10 +149,40 @@ mod tests {
 
     #[test]
     fn multiline() {
-        let _std_in = vec![
+        let std_in = vec![
             String::from("testing.."),
             String::from(".\n."),
             String::from("is fun"),
         ];
+        let mock_std_in = MockStdIn::new(std_in);
+        let mock_std_out = vec![];
+
+        let mut tee = Tee::new(mock_std_in, mock_std_out);
+
+        let mut buf = [0; 100];
+
+        // first read
+        assert_eq!(9, tee.read(&mut buf).unwrap());
+        assert_eq!(b"testing..", &buf[0..9]);
+        let mock_std_out = tee.get_writer_ref();
+        assert_eq!(b"testing..", &mock_std_out.as_slice());
+
+        // second read
+        assert_eq!(2, tee.read(&mut buf).unwrap());
+        assert_eq!(b".\n", &buf[0..2]);
+        let mock_std_out = tee.get_writer_ref();
+        assert_eq!(b"testing...\n", &mock_std_out.as_slice());
+
+        // third read
+        assert_eq!(1, tee.read(&mut buf).unwrap());
+        assert_eq!(b".", &buf[0..1]);
+        let mock_std_out = tee.get_writer_ref();
+        assert_eq!(b"testing...\n.", &mock_std_out.as_slice());
+
+        // fourth read
+        assert_eq!(6, tee.read(&mut buf).unwrap());
+        assert_eq!(b"is fun", &buf[0..6]);
+        let mock_std_out = tee.get_writer_ref();
+        assert_eq!(b"testing...\n.is fun", &mock_std_out.as_slice());
     }
 }
