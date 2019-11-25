@@ -168,6 +168,7 @@ mod tests {
         assert_eq!(b"testing..", &mock_std_out.as_slice());
 
         // second read
+        // should stop at the newline to allow our two outbound streams to sync
         assert_eq!(2, tee.read(&mut buf).unwrap());
         assert_eq!(b".\n", &buf[0..2]);
         let mock_std_out = tee.get_writer_ref();

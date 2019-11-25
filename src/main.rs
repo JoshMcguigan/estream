@@ -1,5 +1,8 @@
 use regex::Regex;
-use std::{env, io, io::BufRead};
+use std::{env, io, io::BufRead, io::BufReader};
+
+mod lib;
+use lib::Tee;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -15,18 +18,24 @@ fn main() {
     }
 
     let stdin = io::stdin();
+    let stdout = io::stdout();
+    // Tee handles duplicating stdin to std out, while allowing us to iterate over
+    // lines of stdin below. It also synchronizes on newlines, to ensure we get a chance
+    // to handle each line of stdin before it prints any part of the next line to stdout.
+    // This ensures that when we print line information below, it is printed immediately
+    // below the line we intend, and no extra characters from the next line have been
+    // printed to stdout before it.
+    let tee = Tee::new(stdin.lock(), stdout);
 
     let file_colon_line_colon_column = Regex::new(FILE_COLON_LINE_COLON_COLUMN).unwrap();
     let file_colon_line = Regex::new(FILE_COLON_LINE).unwrap();
 
-    for line in stdin.lock().lines() {
+    for line in BufReader::new(tee).lines() {
         // For each line of stdin:
         //   - echo the line to stdout
         //   - look for error locations (`test_file.py:15`)
         //      - echo an additional line for any detected error condition
-
         let line = line.unwrap();
-        println!("{}", &line);
 
         if let Some(captures) = file_colon_line_colon_column.captures(&line) {
             let file = &captures["file"];
