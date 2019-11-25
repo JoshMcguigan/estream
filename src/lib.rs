@@ -107,9 +107,20 @@ mod tests {
 
     #[test]
     fn single_read_ends_in_newline() {
-        let _std_in = vec![
+        let std_in = vec![
             String::from("testing\n"),
         ];
+        let mock_std_in = MockStdIn::new(std_in);
+        let mock_std_out = vec![];
+
+        let mut tee = Tee::new(mock_std_in, mock_std_out);
+
+        let mut buf = [0; 100];
+        assert_eq!(8, tee.read(&mut buf).unwrap());
+        assert_eq!(b"testing\n", &buf[0..8]);
+
+        let mock_std_out = tee.get_writer_ref();
+        assert_eq!(b"testing\n", &mock_std_out.as_slice());
     }
 
     #[test]
