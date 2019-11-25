@@ -4,12 +4,12 @@ pub struct Tee<R, W> {
     reader: R,
     writer: W,
     buf: [u8; 8192],
-    len: usize,
+    cap: usize,
 }
 
 impl<R, W> Tee<R, W> {
     pub fn new(reader: R, writer: W) -> Self {
-        Self { reader, writer, buf: [0; 8192], len: 0 }
+        Self { reader, writer, buf: [0; 8192], cap: 0 }
     }
 
     #[cfg(test)]
@@ -23,26 +23,31 @@ impl<R, W> Read for Tee<R, W>
           W: Write
 {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        let total_len = self.reader.read(&mut self.buf)?;
-        let newline_index = self.buf[0..total_len].iter().position(|b| *b == '\n' as u8);
-        let len = if let Some(newline_index) = newline_index {
-            newline_index + 1
-        } else {
-            total_len
-        };
-        self.writer.write(&self.buf[0..len])?;
-        &mut buf[0..len].copy_from_slice(&self.buf[0..len]);
-
-        if len < total_len {
-            // This means we didn't write out all of the bytes we got in. This is done
-            // to allow the reader a chance to process each line before we print any bytes
-            // on the next line, which gives the reader a chance to write their own bytes to
-            // standard out, without interleaving.
-
-            // copy total_len - len elements to start of self.buf, then set self.len
+        if self.cap > 0 {
+            // return old data
+            // TODO handle buf smaller than self.cap
+            buf[..self.cap].copy_from_slice(&self.buf[..self.cap]);
+            let len_written = self.writer.write(&buf[..self.cap])?;
+            debug_assert_eq!(len_written, self.cap);
+            let len = self.cap;
+            self.cap = 0;
+            return Ok(len);
         }
-
-        Ok(len)
+        let total_len = self.reader.read(buf)?;
+        let newline_index = buf[0..total_len].iter().position(|b| *b == '\n' as u8);
+        if let Some(newline_index) = newline_index {
+            let cutoff = newline_index + 1;
+            self.writer.write(&buf[0..cutoff])?;
+            // TODO handle self.buf < len_remaining
+            let len_remaining = total_len - cutoff;
+            // save the bytes after the newline in our internal buffer
+            &mut self.buf[0..len_remaining].copy_from_slice(&buf[cutoff..total_len]);
+            self.cap = len_remaining;
+            Ok(cutoff)
+        } else {
+            self.writer.write(&buf[0..total_len])?;
+            Ok(total_len)
+        }
     }
 }
 
@@ -97,17 +102,15 @@ mod tests {
         assert_eq!(b"testing", &buf[0..7]);
 
         let mock_std_out = tee.get_writer_ref();
-        assert_eq!(b"testing", &mock_std_out[0..7]);
+        assert_eq!(b"testing", &mock_std_out.as_slice());
     }
 
     #[test]
     fn single_read_ends_in_newline() {
-        let std_in = vec![
+        let _std_in = vec![
             String::from("testing\n"),
         ];
     }
-
-    // TODO handle windows newlines
 
     #[test]
     fn single_read_with_newline() {
@@ -124,20 +127,19 @@ mod tests {
         assert_eq!(b"testing\n", &buf[0..8]);
 
         let mock_std_out = tee.get_writer_ref();
-        assert_eq!(b"testing\n", &mock_std_out[0..8]);
+        assert_eq!(b"testing\n", &mock_std_out.as_slice());
 
         assert_eq!(8, tee.read(&mut buf).unwrap());
         assert_eq!(b"is great", &buf[0..8]);
 
         let mock_std_out = tee.get_writer_ref();
-        assert_eq!(b"is great", &mock_std_out[0..8]);
+        assert_eq!(b"testing\nis great", &mock_std_out.as_slice());
     }
 
     #[test]
     fn multiline() {
-        let std_in = vec![
+        let _std_in = vec![
             String::from("testing.."),
-            String::from("."),
             String::from(".\n."),
             String::from("is fun"),
         ];
