@@ -7,9 +7,22 @@ pub struct Tee<R, W> {
     cap: usize,
 }
 
-impl<R, W> Tee<R, W> {
+impl<R, W> Tee<R, W> 
+    where R: Read,
+          W: Write
+{
     pub fn new(reader: R, writer: W) -> Self {
         Self { reader, writer, buf: [0; 8192], cap: 0 }
+    }
+
+    /// This method must write and flush all bytes so we can
+    /// be sure our output is written to the correct line of
+    /// stdout.
+    fn write(&mut self, bytes: &[u8]) -> io::Result<()> {
+        self.writer.write_all(bytes)?;
+        self.writer.flush()?;
+
+        Ok(())
     }
 
     #[cfg(test)]
@@ -27,25 +40,24 @@ impl<R, W> Read for Tee<R, W>
             // return old data
             // TODO handle buf smaller than self.cap
             buf[..self.cap].copy_from_slice(&self.buf[..self.cap]);
-            let len_written = self.writer.write(&buf[..self.cap])?;
-            debug_assert_eq!(len_written, self.cap);
+            self.write(&buf[..self.cap])?;
             let len = self.cap;
             self.cap = 0;
             return Ok(len);
         }
         let total_len = self.reader.read(buf)?;
-        let newline_index = buf[0..total_len].iter().position(|b| *b == '\n' as u8);
+        let newline_index = buf[0..total_len].iter().position(|b| *b == b'\n');
         if let Some(newline_index) = newline_index {
             let cutoff = newline_index + 1;
-            self.writer.write(&buf[0..cutoff])?;
+            self.write(&buf[0..cutoff])?;
             // TODO handle self.buf < len_remaining
             let len_remaining = total_len - cutoff;
             // save the bytes after the newline in our internal buffer
-            &mut self.buf[0..len_remaining].copy_from_slice(&buf[cutoff..total_len]);
+            self.buf[0..len_remaining].copy_from_slice(&buf[cutoff..total_len]);
             self.cap = len_remaining;
             Ok(cutoff)
         } else {
-            self.writer.write(&buf[0..total_len])?;
+            self.write(&buf[0..total_len])?;
             Ok(total_len)
         }
     }
