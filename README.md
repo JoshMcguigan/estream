@@ -9,7 +9,7 @@ If you are a Vim user, estream can help you unlock the power of the quickfix win
 Using vim-plug:
 
 ```vim
-Plug 'JoshMcguigan/estream', { 'do': 'bash install.sh v0.1.1' }
+Plug 'JoshMcguigan/estream', { 'do': 'bash install.sh v0.1.2' }
 
 " estream doesn't directly depend on asyncrun, but they work well together
 Plug 'skywind3000/asyncrun.vim'
