@@ -38,7 +38,10 @@ impl<R, W> Read for Tee<R, W>
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         if self.cap > 0 {
             // return old data
-            // TODO handle buf smaller than self.cap
+            // We know this will fit into the user buffer because
+            // it gets in here first by entering their buffer in the
+            // section below. This assumption will not hold if the user
+            // first passes a large buffer, then a small one.
             buf[..self.cap].copy_from_slice(&self.buf[..self.cap]);
             self.write(&buf[..self.cap])?;
             let len = self.cap;
@@ -50,11 +53,18 @@ impl<R, W> Read for Tee<R, W>
         if let Some(newline_index) = newline_index {
             let cutoff = newline_index + 1;
             self.write(&buf[0..cutoff])?;
-            // TODO handle self.buf < len_remaining
             let len_remaining = total_len - cutoff;
+            // We only save up to the length of our buffer. This should
+            // be fine, because we'd only drop data if the user buffer
+            // was larger than our own, which is unlikely.
+            let len_to_save = if len_remaining < self.buf.len() {
+                len_remaining
+            } else {
+                self.buf.len()
+            };
             // save the bytes after the newline in our internal buffer
-            self.buf[0..len_remaining].copy_from_slice(&buf[cutoff..total_len]);
-            self.cap = len_remaining;
+            self.buf[0..len_to_save].copy_from_slice(&buf[cutoff..(cutoff + len_to_save)]);
+            self.cap = len_to_save;
             Ok(cutoff)
         } else {
             self.write(&buf[0..total_len])?;
