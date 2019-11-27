@@ -1,4 +1,7 @@
-use std::{io, io::{Read, Write}};
+use std::{
+    io,
+    io::{Read, Write},
+};
 
 pub struct Tee<R, W> {
     reader: R,
@@ -7,12 +10,18 @@ pub struct Tee<R, W> {
     cap: usize,
 }
 
-impl<R, W> Tee<R, W> 
-    where R: Read,
-          W: Write
+impl<R, W> Tee<R, W>
+where
+    R: Read,
+    W: Write,
 {
     pub fn new(reader: R, writer: W) -> Self {
-        Self { reader, writer, buf: [0; 8192], cap: 0 }
+        Self {
+            reader,
+            writer,
+            buf: [0; 8192],
+            cap: 0,
+        }
     }
 
     /// This method must write and flush all bytes so we can
@@ -31,9 +40,10 @@ impl<R, W> Tee<R, W>
     }
 }
 
-impl<R, W> Read for Tee<R, W> 
-    where R: Read,
-          W: Write
+impl<R, W> Read for Tee<R, W>
+where
+    R: Read,
+    W: Write,
 {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         if self.cap > 0 {
@@ -75,7 +85,7 @@ impl<R, W> Read for Tee<R, W>
 
 #[cfg(test)]
 mod tests {
-    use std::{io, {io::Read}};
+    use std::{io, io::Read};
 
     use super::Tee;
 
@@ -111,9 +121,7 @@ mod tests {
 
     #[test]
     fn single_read() {
-        let std_in = vec![
-            String::from("testing"),
-        ];
+        let std_in = vec![String::from("testing")];
         let mock_std_in = MockStdIn::new(std_in);
         let mock_std_out = vec![];
 
@@ -129,9 +137,7 @@ mod tests {
 
     #[test]
     fn single_read_ends_in_newline() {
-        let std_in = vec![
-            String::from("testing\n"),
-        ];
+        let std_in = vec![String::from("testing\n")];
         let mock_std_in = MockStdIn::new(std_in);
         let mock_std_out = vec![];
 
@@ -147,9 +153,7 @@ mod tests {
 
     #[test]
     fn single_read_with_newline() {
-        let std_in = vec![
-            String::from("testing\nis great"),
-        ];
+        let std_in = vec![String::from("testing\nis great")];
         let mock_std_in = MockStdIn::new(std_in);
         let mock_std_out = vec![];
 
