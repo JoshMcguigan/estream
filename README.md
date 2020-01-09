@@ -2,6 +2,8 @@
 
 If you are a Vim user, estream can help you unlock the power of the quickfix window without dealing with the pain of Vim's `errorformat`.
 
+[![asciicast](https://asciinema.org/a/ymMZ174YOTlHSQqmVNwb03sld.svg)](https://asciinema.org/a/ymMZ174YOTlHSQqmVNwb03sld)
+
 ### Installation
 
 Using vim-plug:
