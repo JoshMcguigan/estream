@@ -1,4 +1,4 @@
-use regex::Regex;
+use regex::{Captures, Regex};
 use std::{env, io, io::BufRead, io::BufReader};
 
 mod lib;
@@ -40,43 +40,11 @@ fn main() {
         let line = line.unwrap();
 
         if let Some(captures) = file_colon_line_colon_column.captures(&line) {
-            let file = &captures["file"];
-            // It is a bit odd that we are unwrapping here, then wrapping with
-            // Some below. This is to express the fact that line/column should
-            // always be numbers (modulo a programming error), so we want to
-            // ensure they can be parsed.
-            let line = &captures["line"].parse().unwrap();
-            let column = &captures["column"].parse().unwrap();
-
-            let e = ErrorLocation {
-                file,
-                line: Some(*line),
-                column: Some(*column),
-            };
-            handle_error_line(e);
+            handle_error_line((&captures).into());
         } else if let Some(captures) = file_colon_line.captures(&line) {
-            let file = &captures["file"];
-            // See note above on why we unwrap here only to wrap in Some below.
-            let line = &captures["line"].parse().unwrap();
-
-            let e = ErrorLocation {
-                file,
-                line: Some(*line),
-                column: None,
-            };
-            handle_error_line(e);
+            handle_error_line((&captures).into());
         } else if let Some(captures) = python.captures(&line) {
-			// TODO fix duplication here with above
-            let file = &captures["file"];
-            // See note above on why we unwrap here only to wrap in Some below.
-            let line = &captures["line"].parse().unwrap();
-
-            let e = ErrorLocation {
-                file,
-                line: Some(*line),
-                column: None,
-            };
-            handle_error_line(e);
+            handle_error_line((&captures).into());
         }
     }
 }
@@ -110,6 +78,20 @@ struct ErrorLocation<'a> {
     file: &'a str,
     line: Option<u32>,
     column: Option<u32>,
+}
+
+impl<'a> From<&'a Captures<'a>> for ErrorLocation<'a> {
+	fn from(captures: &'a Captures) -> Self {
+		let file = &captures["file"];
+		let line = captures.name("line").map(|v| v.as_str().parse().unwrap());
+		let column = captures.name("column").map(|v| v.as_str().parse().unwrap());
+
+		Self {
+			file,
+			line,
+			column,
+		}
+	}
 }
 
 #[cfg(test)]
