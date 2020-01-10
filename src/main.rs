@@ -9,6 +9,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 static FILE_COLON_LINE_COLON_COLUMN: &str =
     r"(?P<file>\S+):(?P<line>[[:digit:]]+):(?P<column>[[:digit:]]+)";
 static FILE_COLON_LINE: &str = r"(?P<file>\S+):(?P<line>[[:digit:]]+)";
+static PYTHON: &str = r#""./(?P<file>\S+)", line (?P<line>[[:digit:]]+)"#;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -29,6 +30,7 @@ fn main() {
 
     let file_colon_line_colon_column = Regex::new(FILE_COLON_LINE_COLON_COLUMN).unwrap();
     let file_colon_line = Regex::new(FILE_COLON_LINE).unwrap();
+    let python = Regex::new(PYTHON).unwrap();
 
     for line in BufReader::new(tee).lines() {
         // For each line of stdin:
@@ -53,6 +55,18 @@ fn main() {
             };
             handle_error_line(e);
         } else if let Some(captures) = file_colon_line.captures(&line) {
+            let file = &captures["file"];
+            // See note above on why we unwrap here only to wrap in Some below.
+            let line = &captures["line"].parse().unwrap();
+
+            let e = ErrorLocation {
+                file,
+                line: Some(*line),
+                column: None,
+            };
+            handle_error_line(e);
+        } else if let Some(captures) = python.captures(&line) {
+			// TODO fix duplication here with above
             let file = &captures["file"];
             // See note above on why we unwrap here only to wrap in Some below.
             let line = &captures["line"].parse().unwrap();
@@ -201,6 +215,25 @@ mod file_colon_line {
         let captures = re(input).unwrap();
 
         assert_eq!("test.txt", &captures["file"]);
+        assert_eq!("20", &captures["line"]);
+    }
+}
+
+#[cfg(test)]
+mod python {
+    use super::PYTHON;
+    use regex::{Captures, Regex};
+
+    fn re(input: &str) -> Option<Captures> {
+        Regex::new(PYTHON).unwrap().captures(input)
+    }
+
+    #[test]
+    fn simple() {
+        let input = "  File \"./path/to/test.py\", line 20, in main";
+        let captures = re(input).unwrap();
+
+        assert_eq!("path/to/test.py", &captures["file"]);
         assert_eq!("20", &captures["line"]);
     }
 }
