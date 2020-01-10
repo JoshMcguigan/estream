@@ -81,17 +81,13 @@ struct ErrorLocation<'a> {
 }
 
 impl<'a> From<&'a Captures<'a>> for ErrorLocation<'a> {
-	fn from(captures: &'a Captures) -> Self {
-		let file = &captures["file"];
-		let line = captures.name("line").map(|v| v.as_str().parse().unwrap());
-		let column = captures.name("column").map(|v| v.as_str().parse().unwrap());
+    fn from(captures: &'a Captures) -> Self {
+        let file = &captures["file"];
+        let line = captures.name("line").map(|v| v.as_str().parse().unwrap());
+        let column = captures.name("column").map(|v| v.as_str().parse().unwrap());
 
-		Self {
-			file,
-			line,
-			column,
-		}
-	}
+        Self { file, line, column }
+    }
 }
 
 #[cfg(test)]
